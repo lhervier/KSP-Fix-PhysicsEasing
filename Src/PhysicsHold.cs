@@ -30,6 +30,14 @@ namespace com.github.lhervier.ksp.fix.physicseasing
         /// </summary>
         internal static bool CanHold;
 
+        /// <summary>
+        /// Fired with a vessel as it is held still, and as it is let go. Other mods find them by name
+        /// (GameEvents.FindEvent&lt;EventData&lt;Vessel&gt;&gt;("onPhysicsEasingHold") and "onPhysicsEasingLetGo"), without
+        /// a reference to this assembly.
+        /// </summary>
+        public static readonly EventData<Vessel> OnHold = new EventData<Vessel>("onPhysicsEasingHold");
+        public static readonly EventData<Vessel> OnLetGo = new EventData<Vessel>("onPhysicsEasingLetGo");
+
         /// <summary>The bodies held kinematic since the vessel left the rails; null when none is held.</summary>
         private List<Rigidbody> held;
 
@@ -62,7 +70,12 @@ namespace com.github.lhervier.ksp.fix.physicseasing
         public override void OnGoOnRails()
         {
             // Packing the vessel takes its bodies over.
+            bool wasHeld = IsHeld;
             Forget();
+            if (wasHeld)
+            {
+                OnLetGo.Fire(vessel);
+            }
         }
 
         private void OnVesselGoOffRails(Vessel v)
@@ -126,6 +139,7 @@ namespace com.github.lhervier.ksp.fix.physicseasing
             }
             lastTyreForces = new Vector2?[wheelParts.Count];
             Log.Debug($"{Name()}: held still at {Time.fixedTime:0.00}, {held.Count} body(ies), {wheelParts.Count} wheel(s)");
+            OnHold.Fire(vessel);
             // Checked before the wheels' own physics step, so that the step that lets go is the first one their
             // suspensions and tyres push the vessel in: VPP (KSPWheelController) and the part modules run their
             // FixedUpdate after TimingStage.Early, and while the bodies are still held their forces are lost.
@@ -171,6 +185,7 @@ namespace com.github.lhervier.ksp.fix.physicseasing
             Log.Info($"{Name()}: let go after {heldSteps} physics step(s) held, {grounded} of {wheelParts?.Count ?? 0} " +
                 $"wheel(s) on the ground, wheel contacts {(contactsKnown ? "known" : "not known")}, tyres " +
                 $"{(settled ? "settled" : "not settled")}");
+            OnLetGo.Fire(vessel);
         }
 
         /// <summary>Lets the held bodies go, if any, and forgets the hold.</summary>

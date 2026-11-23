@@ -76,6 +76,10 @@ wheel.tireForce.y = Mathf.Lerp(wheel.lastTireForce.y, wheel.tireForce.y, tireFor
   push it from its first free step.
 - A postfix of `ModuleWheelBase.wheelSetup` keeps a wheel's part held as the game builds the wheel, which makes its
   body dynamic again.
+- It fires two `GameEvents` with the vessel, `onPhysicsEasingHold` as it holds it and `onPhysicsEasingLetGo` as it
+  lets it go, which another mod can find by name (`GameEvents.FindEvent<EventData<Vessel>>`) without depending on
+  this one: [Landed Shape Fix](https://github.com/lhervier/KSP-Fix-LandedShape) gives the parts their saved
+  velocities as the vessel is let go.
 - While a vessel is held, a prefix of `OrbitDriver.TrackRigidbody` gives its orbit the velocity of a vessel at rest on
   the surface. The game takes a vessel's velocity from its rigidbodies only when its root part is not kinematic, and
   otherwise keeps a stale one: the vessel would read hundreds of metres per second at one step out of two, and a
