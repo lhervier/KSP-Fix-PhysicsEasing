@@ -5,8 +5,9 @@ change.
 
 A fix for stock KSP 1.12: a few Harmony patches and a vessel module. It is a mod of its own, built on top of
 [KSP Community Fixes](https://github.com/KSPModdingLibs/KSPCommunityFixes), the base most players run. It is meant as
-a base under other fixes rather than for itself: [Landed Shape Fix](https://github.com/lhervier/KSP-Fix-LandedShape)
-needs it, and so will a docking fix in preparation.
+a base under other fixes rather than for itself: [Suspension Bounce Fix](https://github.com/lhervier/KSP-Fix-SuspensionBounce)
+and [Landed Shape Fix](https://github.com/lhervier/KSP-Fix-LandedShape) need it, and so will a docking fix in
+preparation.
 
 > **When physics starts on a vessel standing on the ground or floating, KSP takes its weight away and brings it back
 > over a few physics steps: the *physics easing*.** This mod gives the vessel its full weight at once instead, and
