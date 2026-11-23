@@ -1,0 +1,4 @@
+obj/
+GameData/KSPFixPhysicsEasing/*.dll
+GameData/*.zip
+__pycache__/
