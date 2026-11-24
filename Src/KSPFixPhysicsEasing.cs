@@ -6,8 +6,8 @@ using UnityEngine;
 namespace com.github.lhervier.ksp.fix.physicseasing
 {
     /// <summary>
-    /// Reads the settings and installs the patches, once, when KSP starts: from then on, a landed or splashed vessel
-    /// leaving the rails starts with its full weight, held still until its wheels hold it.
+    /// Reads the settings and installs the patches, once, when KSP starts: from then on, the game no longer eases any
+    /// vessel into physics, and a landed or splashed vessel leaving the rails is held still until its wheels hold it.
     /// </summary>
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class KSPFixPhysicsEasing : MonoBehaviour
@@ -30,8 +30,8 @@ namespace com.github.lhervier.ksp.fix.physicseasing
                 HeldVesselOrbit.Install(harmony);
                 PhysicsHold.CanHold = true;
                 Log.Info("Landed and splashed vessels held still until their wheels hold them");
-                NoEasingOffRails.Install(harmony);
-                Log.Info("Physics easing skipped for vessels leaving the rails landed or splashed");
+                NoEasing.Install(harmony);
+                Log.Info("Physics easing skipped, off the rails and after a docking");
             }
             catch (Exception e)
             {

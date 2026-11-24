@@ -5,9 +5,10 @@ namespace com.github.lhervier.ksp.fix.physicseasing
 {
     /// <summary>
     /// Holds a landed or splashed vessel with wheels still as it leaves the rails, until its wheels hold it, then lets
-    /// it go at rest.
+    /// it go at rest. While the active vessel is held, its controls are locked, as the game locks them while it eases a
+    /// vessel in: a command given then would be lost on bodies that cannot move.
     ///
-    /// Without the physics easing (<see cref="NoEasingOffRails"/>), a vessel starts with its full weight. The game
+    /// Without the physics easing (<see cref="NoEasing"/>), a vessel starts with its full weight. The game
     /// builds its wheels the frame after the unpack, and a wheel finds the ground only after a physics step of its own:
     /// until then, it pushes on nothing, and a vessel standing on its wheels falls freely. A tyre then brings its force
     /// from nothing to what holds the vessel over several steps (VehicleBase.ApplyTireForce smooths it): on a slope, a
@@ -53,6 +54,9 @@ namespace com.github.lhervier.ksp.fix.physicseasing
 
         private int heldSteps;
 
+        /// <summary>The id of the control lock set while the vessel is held, or null when none is set.</summary>
+        private string lockId;
+
         /// <summary>Whether the vessel is held still, until its wheels hold it.</summary>
         public bool IsHeld => held != null;
 
@@ -63,7 +67,9 @@ namespace com.github.lhervier.ksp.fix.physicseasing
 
         private void OnDestroy()
         {
-            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, CheckHold);
+            // The vessel goes away with its bodies held, merged into another by a docking for instance: its parts must
+            // not stay held, nor the controls locked.
+            Forget();
             GameEvents.onVesselGoOffRails.Remove(OnVesselGoOffRails);
         }
 
@@ -138,7 +144,15 @@ namespace com.github.lhervier.ksp.fix.physicseasing
                 }
             }
             lastTyreForces = new Vector2?[wheelParts.Count];
-            Log.Debug($"{Name()}: held still at {Time.fixedTime:0.00}, {held.Count} body(ies), {wheelParts.Count} wheel(s)");
+            // The same controls as the game locks while it eases a vessel in (VesselPrecalculate.StartEasing), on the
+            // active vessel only, under a lock of this vessel's own.
+            if (vessel == FlightGlobals.ActiveVessel)
+            {
+                lockId = "KSPFixPhysicsEasingHold" + vessel.persistentId;
+                InputLockManager.SetControlLock(ControlTypes.ALL_SHIP_CONTROLS, lockId);
+            }
+            Log.Debug($"{Name()}: held still at {Time.fixedTime:0.00}, {held.Count} body(ies), {wheelParts.Count} wheel(s)" +
+                (lockId != null ? ", controls locked" : ""));
             OnHold.Fire(vessel);
             // Checked before the wheels' own physics step, so that the step that lets go is the first one their
             // suspensions and tyres push the vessel in: VPP (KSPWheelController) and the part modules run their
@@ -188,10 +202,15 @@ namespace com.github.lhervier.ksp.fix.physicseasing
             OnLetGo.Fire(vessel);
         }
 
-        /// <summary>Lets the held bodies go, if any, and forgets the hold.</summary>
+        /// <summary>Lets the held bodies go, if any, unlocks the controls, and forgets the hold.</summary>
         private void Forget()
         {
             TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, CheckHold);
+            if (lockId != null)
+            {
+                InputLockManager.RemoveControlLock(lockId);
+                lockId = null;
+            }
             if (held != null)
             {
                 foreach (Rigidbody rb in held)
